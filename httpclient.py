@@ -43,18 +43,25 @@ class HTTPClient(object):
 			url=url[7:]
 		#get rid of the "http://" header if exists
 		csplist=url.split(":")
-		if(len(csplist)==2):
+		if(len(csplist)==2):	#if there is a specific port
 			host=csplist[0]
 			post_path=csplist[1]
 			splited=post_path.split("/",1)
 			port=int(splited[0])
-			path=splited[1]
+			if(len(splited)==2):	#if a specfic path exists
+				path=splited[1]
+			else:
+				path="/"
 		else:
 			port=80
 			host_path=csplist[0]
 			splited=host_path.split("/",1)
 			host=splited[0]
-			path=splited[1]
+			if(len(splited)==2):	#if a specfic path exists
+				path=splited[1]
+			else:
+				path="/"
+		if path==None: path="/"
 		return host, port, path
 
 	def connect(self, host, port):
@@ -94,7 +101,10 @@ class HTTPClient(object):
 		body = ""
 		host, port, path = self.get_host_port(url)
 		sock = self.connect(host, port)
-		sock.send("GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host))
+		message="GET %s HTTP/1.1\r\nHost: %s\r\n"
+		message+="Content-Length: 0\r\n"
+		message+="Content-Type: application/x-www-form-urlencoded\r\n\r\n"
+		sock.send(message % (path, host))
 		data = self.recvall(sock)
 		sock.close()
 		print data
