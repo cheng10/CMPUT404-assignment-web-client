@@ -1,5 +1,8 @@
+# Folder view configuration files
+.DS_Store
+
 *.py[cod]
-*.swp
+
 # C extensions
 *.so
 
@@ -34,3 +37,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Virtual Environment
+venv

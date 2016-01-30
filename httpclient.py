@@ -37,25 +37,25 @@ class HTTPResponse(object):
 
 class HTTPClient(object):
 	def get_host_port(self,url):
-			if "http" in url:
-				url=url[7:]
-			#generlize url i.e. get rid of the "http://" header if exists
-			csplist=url.split(":")
-			if (len(csplist)==2):
-				port=int(csplist[-1])
-			else:
-				port=80
-			host_path=csplist[0]
-			if (host_path[-1]=='/'):
-				host_path=host_path[0:-1]
-			#get rid of the endding "/" if exists
-			ssplit=host_path.split("/",1)
-			host=ssplit[0]
-			if (len(ssplit)==1):
-				path="/"
-			else:
-				path="/"+ssplit[1]
-			return host, port, path
+		if "http" in url:
+			url=url[7:]
+		#generlize url i.e. get rid of the "http://" header if exists
+		csplist=url.split(":")
+		if (len(csplist)==2):
+			port=int(csplist[-1])
+		else:
+			port=80
+		host_path=csplist[0]
+		if (host_path[-1]=='/'):
+			host_path=host_path[0:-1]
+		#get rid of the endding "/" if exists
+		ssplit=host_path.split("/",1)
+		host=ssplit[0]
+		if (len(ssplit)==1):
+			path="/"
+		else:
+			path="/"+ssplit[1]
+		return host, port, path
 
 	def connect(self, host, port):
 		# use sockets!
@@ -92,7 +92,6 @@ class HTTPClient(object):
 	def GET(self, url, args=None):
 		code = 500
 		body = ""
-		path = "/"
 		host, port, path = self.get_host_port(url)
 		sock = self.connect(host, port)
 		sock.send("GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host))
@@ -107,17 +106,19 @@ class HTTPClient(object):
 	def POST(self, url, args=None):
 		code = 500
 		body = ""
-		path = "/"
 		host, port, path = self.get_host_port(url)
 		sock = self.connect(host, port)
-		sock.send("POST %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host))
-		data = self.recval(sock)
+		message="POST %s HTTP/1.0\r\nHost: %s\r\n" 
+		message+="Content-Length: 0\r\n"
+		message+="Content-Type: application/x-www-form-urlencoded\r\n"
+		message+="%s\r\n\r\n"
+		sock.send(message % (path, host, args))
+		data = self.recvall(sock)
 		sock.close()
 		print data
 		code = self.get_code(data)
-		header = self.get_header(data)
+		header = self.get_headers(data)
 		body = self.get_body(data)
-
 		return HTTPResponse(code, body)
 
 	def command(self, url, command="GET", args=None):
