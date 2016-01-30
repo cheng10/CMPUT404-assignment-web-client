@@ -64,7 +64,7 @@ class HTTPClient(object):
 		return sock
 
 	def get_code(self, data):
-		code=data.split(" ")[1]
+		code=int(data.split(" ")[1])
 		return code
 
 	def get_headers(self,data):
@@ -97,7 +97,7 @@ class HTTPClient(object):
 		sock.send("GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host))
 		data = self.recvall(sock)
 		sock.close()
-		print data
+		#print data
 		code = self.get_code(data)
 		header = self.get_headers(data)
 		body = self.get_body(data)
@@ -115,7 +115,7 @@ class HTTPClient(object):
 		sock.send(message % (path, host, args))
 		data = self.recvall(sock)
 		sock.close()
-		print data
+		#print data
 		code = self.get_code(data)
 		header = self.get_headers(data)
 		body = self.get_body(data)
