@@ -37,24 +37,24 @@ class HTTPResponse(object):
 
 class HTTPClient(object):
 	def get_host_port(self,url):
+		#the syntax of a generic URI, from wikipedia
+		#scheme:[//[user:password@]host[:port]][/]path[?query][#fragment]
 		if "http" in url:
 			url=url[7:]
-		#generlize url i.e. get rid of the "http://" header if exists
+		#get rid of the "http://" header if exists
 		csplist=url.split(":")
-		if (len(csplist)==2):
-			port=int(csplist[-1])
+		if(len(csplist)==2):
+			host=csplist[0]
+			post_path=csplist[1]
+			splited=post_path.split("/",1)
+			port=int(splited[0])
+			path=splited[1]
 		else:
 			port=80
-		host_path=csplist[0]
-		if (host_path[-1]=='/'):
-			host_path=host_path[0:-1]
-		#get rid of the endding "/" if exists
-		ssplit=host_path.split("/",1)
-		host=ssplit[0]
-		if (len(ssplit)==1):
-			path="/"
-		else:
-			path="/"+ssplit[1]
+			host_path=csplist[0]
+			splited=host_path.split("/",1)
+			host=splited[0]
+			path=splited[1]
 		return host, port, path
 
 	def connect(self, host, port):
@@ -97,7 +97,7 @@ class HTTPClient(object):
 		sock.send("GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host))
 		data = self.recvall(sock)
 		sock.close()
-		#print data
+		print data
 		code = self.get_code(data)
 		header = self.get_headers(data)
 		body = self.get_body(data)
@@ -115,7 +115,7 @@ class HTTPClient(object):
 		sock.send(message % (path, host, args))
 		data = self.recvall(sock)
 		sock.close()
-		#print data
+		print data
 		code = self.get_code(data)
 		header = self.get_headers(data)
 		body = self.get_body(data)
