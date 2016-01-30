@@ -37,14 +37,25 @@ class HTTPResponse(object):
 
 class HTTPClient(object):
 	def get_host_port(self,url):
-		url_splited=url.split(":")
-		if (len(url_splited)>=2):
-			host=url_splited[0]
-			port=int(url_splited[1])
-		elif (len(url_splited)==1):
-			host=url_splited[0]
-			port=80
-		return host, port
+			if "http" in url:
+				url=url[7:]
+			#generlize url i.e. get rid of the "http://" header if exists
+			csplist=url.split(":")
+			if (len(csplist)==2):
+				port=int(csplist[-1])
+			else:
+				port=80
+			host_path=csplist[0]
+			if (host_path[-1]=='/'):
+				host_path=host_path[0:-1]
+			#get rid of the endding "/" if exists
+			ssplit=host_path.split("/",1)
+			host=ssplit[0]
+			if (len(ssplit)==1):
+				path="/"
+			else:
+				path="/"+ssplit[1]
+			return host, port, path
 
 	def connect(self, host, port):
 		# use sockets!
@@ -53,13 +64,18 @@ class HTTPClient(object):
 		return sock
 
 	def get_code(self, data):
-		return None
+		code=data.split(" ")[1]
+		return code
 
 	def get_headers(self,data):
-		return None
+		blocks=data.split("\r\n\r\n")
+		header=blocks[0].split("\r\n",1)[1]
+		return header
 
 	def get_body(self, data):
-		return None
+		blocks=data.split("\r\n\r\n")
+		body=blocks[1]
+		return body
 
 	# read everything from the socket
 	def recvall(self, sock):
@@ -76,20 +92,32 @@ class HTTPClient(object):
 	def GET(self, url, args=None):
 		code = 500
 		body = ""
-		host, port = self.get_host_port(url)
+		path = "/"
+		host, port, path = self.get_host_port(url)
 		sock = self.connect(host, port)
-		sock.send("GET / HTTP/1.0\r\nHost: %s\r\n\r\n" % (host))
+		sock.send("GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host))
 		data = self.recvall(sock)
-		print data
-		#code = self.get_code(data)
-		#header = self.get_headers(data)
-		#body = self.get_body(data)
 		sock.close()
+		print data
+		code = self.get_code(data)
+		header = self.get_headers(data)
+		body = self.get_body(data)
 		return HTTPResponse(code, body)
 
 	def POST(self, url, args=None):
 		code = 500
 		body = ""
+		path = "/"
+		host, port, path = self.get_host_port(url)
+		sock = self.connect(host, port)
+		sock.send("POST %s HTTP/1.0\r\nHost: %s\r\n\r\n" % (path, host))
+		data = self.recval(sock)
+		sock.close()
+		print data
+		code = self.get_code(data)
+		header = self.get_header(data)
+		body = self.get_body(data)
+
 		return HTTPResponse(code, body)
 
 	def command(self, url, command="GET", args=None):
