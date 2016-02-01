@@ -36,33 +36,22 @@ class HTTPResponse(object):
 		self.body = body
 
 class HTTPClient(object):
-	def get_host_port(self,url):
+	def parse_url(self,url):
 		#the syntax of a generic URI, from wikipedia
 		#scheme:[//[user:password@]host[:port]][/]path[?query][#fragment]
-		if "http" in url:
-			url=url[7:]
-		#get rid of the "http://" header if exists
-		csplist=url.split(":")
-		if(len(csplist)==2):	#if there is a specific port
-			host=csplist[0]
-			post_path=csplist[1]
-			splited=post_path.split("/",1)
-			port=int(splited[0])
-			if(len(splited)==2):	#if a specfic path exists
-				path=splited[1]
-			else:
-				path="/"
+		url = url.strip("/")
+		url = url.strip("http://")
+		splited = url.split("/",1)
+		host_port = splited.pop(0)
+		path_query = "/"+"/".join(splited)
+		hps = host_port.split(":")
+		host = hps[0]
+		if (len(hps) > 1):
+			port = int(hps[1])
 		else:
-			port=80
-			host_path=csplist[0]
-			splited=host_path.split("/",1)
-			host=splited[0]
-			if(len(splited)==2):	#if a specfic path exists
-				path=splited[1]
-			else:
-				path="/"
-		if path==None: path="/"
-		return host, port, path
+			port = 80
+		#print host, port, path_query
+		return host, port, path_query
 
 	def connect(self, host, port):
 		# use sockets!
@@ -99,12 +88,13 @@ class HTTPClient(object):
 	def GET(self, url, args=None):
 		code = 500
 		body = ""
-		host, port, path = self.get_host_port(url)
+		host, port, path = self.parse_url(url)
 		sock = self.connect(host, port)
-		message="GET %s HTTP/1.1\r\nHost: %s\r\n"
-		message+="Content-Length: 0\r\n"
-		message+="Content-Type: application/x-www-form-urlencoded\r\n\r\n"
-		sock.send(message % (path, host))
+		sock.sendall("GET "+path+" HTTP/1.1\r\nHost: "+host+"\r\nConnection: close\r\n\r\n" )
+		#Why should I have to add the "Connection: close" sentence???
+		#Some servers have "Connection: keep-alive" in the http response header by default,
+		#This will keep the socket open.
+		#And script would never end. It will stuck in the recall() step forever.
 		data = self.recvall(sock)
 		sock.close()
 		print data
@@ -116,12 +106,17 @@ class HTTPClient(object):
 	def POST(self, url, args=None):
 		code = 500
 		body = ""
-		host, port, path = self.get_host_port(url)
+		if (args!=None):
+			args = urllib.urlencode(args)
+		host, port, path = self.parse_url(url)
 		sock = self.connect(host, port)
 		message="POST %s HTTP/1.0\r\nHost: %s\r\n" 
-		message+="Content-Length: 0\r\n"
-		message+="Content-Type: application/x-www-form-urlencoded\r\n"
-		message+="%s\r\n\r\n"
+		if (args==None): 
+			message+="Content-Length: 0\r\n"
+		else:
+			message+="Content-Length: "+str(len(args))+"\r\n"
+		message+="Content-Type: application/x-www-form-urlencoded\r\n\r\n"
+		message+="%s\r\n"
 		sock.send(message % (path, host, args))
 		data = self.recvall(sock)
 		sock.close()
